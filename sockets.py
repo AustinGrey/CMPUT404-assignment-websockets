@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import uuid
+
 import flask
-from flask import Flask, request
+from flask import Flask, request, redirect
 from flask_sockets import Sockets
 import gevent
 from gevent import queue
@@ -31,7 +33,21 @@ class World:
         self.clear()
         # we've got listeners now!
         self.listeners = list()
-        
+
+        # Track all open sockets
+        self.websockets = dict()
+
+    def track_socket(self, websocket):
+        # Create a unique tracker for this websocket, and add it to the list of tracked websockets
+        name = uuid.uuid4()
+        self.websockets[name] = websocket
+        return name
+
+    def untrack_socket(self, name):
+        # stop tracking the socket with the given name
+        del self.websockets[name]
+
+
     def add_set_listener(self, listener):
         self.listeners.append( listener )
 
@@ -59,29 +75,69 @@ class World:
     def world(self):
         return self.space
 
-myWorld = World()        
+myWorld = World()
+
+class Client:
+    def __init__(self):
+        self.queue = queue.Queue()
+
+    def put(self, v):
+        self.queue.put_nowait(v)
+
+    def get(self):
+        return self.queue.get()
 
 def set_listener( entity, data ):
     ''' do something with the update ! '''
+    pass
 
 myWorld.add_set_listener( set_listener )
         
 @app.route('/')
 def hello():
     '''Return something coherent here.. perhaps redirect to /static/index.html '''
-    return None
+    return redirect('static/index.html', 302)
 
-def read_ws(ws,client):
+def read_ws(ws):
     '''A greenlet function that reads from the websocket and updates the world'''
     # XXX: TODO IMPLEMENT ME
-    return None
+    try:
+        while True:
+            msg = ws.receive()
+            print("WS RECV: %s" % msg)
+            if msg is not None:
+                msg = json.loads(msg)
+            else:
+                break
+            action = msg['action']
+            if action == 'get_world':
+                world = json.dumps(myWorld.world())
+                print("world: ", world)
+                ws.send(world)
+            elif action == 'update_entity':
+                entity = msg['entity']
+                data = msg['data']
+                myWorld.set(entity, data)
+
+    except Exception as e:
+        print(e)
 
 @sockets.route('/subscribe')
 def subscribe_socket(ws):
     '''Fufill the websocket URL of /subscribe, every update notify the
        websocket and read updates from the websocket '''
     # XXX: TODO IMPLEMENT ME
-    return None
+    socket_name = myWorld.track_socket(ws)
+    g = gevent.spawn(read_ws, ws)
+    try:
+        while True:
+            msg = ws.receive()
+            ws.send(msg)
+    except Exception as e:  # WebSocketError as e:
+        print("WS Error %s" % e)
+    finally:
+        myWorld.untrack_socket(socket_name)
+        gevent.kill(g)
 
 
 # I give this to you, this is how you get the raw body/data portion of a post in flask
