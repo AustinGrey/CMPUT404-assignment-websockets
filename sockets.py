@@ -63,8 +63,12 @@ class World:
 
     def update_listeners(self, entity):
         '''update the set listeners'''
-        for listener in self.listeners:
-            listener(entity, self.get(entity))
+        for websocket in self.websockets:
+            self.websockets[websocket].send(
+                json.dumps({
+                    entity: self.get(entity)
+                })
+            )
 
     def clear(self):
         self.space = dict()
@@ -112,7 +116,6 @@ def read_ws(ws):
             action = msg['action']
             if action == 'get_world':
                 world = json.dumps(myWorld.world())
-                print("world: ", world)
                 ws.send(world)
             elif action == 'update_entity':
                 entity = msg['entity']
@@ -131,11 +134,13 @@ def subscribe_socket(ws):
     g = gevent.spawn(read_ws, ws)
     try:
         while True:
-            msg = ws.receive()
-            ws.send(msg)
+            time.sleep(1)
+            # msg = ws.receive()
+            # ws.send(msg)
     except Exception as e:  # WebSocketError as e:
         print("WS Error %s" % e)
     finally:
+        print("KILL")
         myWorld.untrack_socket(socket_name)
         gevent.kill(g)
 
