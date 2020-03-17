@@ -63,12 +63,21 @@ class World:
 
     def update_listeners(self, entity):
         '''update the set listeners'''
+        dead_sockets = []
         for websocket in self.websockets:
-            self.websockets[websocket].send(
-                json.dumps({
-                    entity: self.get(entity)
-                })
-            )
+            try:
+                self.websockets[websocket].send(
+                    json.dumps({
+                        entity: self.get(entity)
+                    })
+                )
+            except Exception as e:
+                print(f"Listener with name {websocket} encountered an error: {e}")
+                print("It will be pruned from the list of listeners")
+                dead_sockets.append(websocket)
+
+        for websocket in dead_sockets:
+            del self.websockets[websocket]
 
     def clear(self):
         self.space = dict()
