@@ -138,6 +138,7 @@ function setEntity(entity, data){
 function addEntity(entity, data) {
     world[entity] = data;
     //XXX: Send a XHTML Request that updates the entity you just modified!
+    debug("Sending an update request...");
     socket.send(JSON.stringify({
         action: "update_entity",
         entity: entity,
