@@ -122,14 +122,20 @@ def read_ws(ws):
                 msg = json.loads(msg)
             else:
                 break
-            action = msg['action']
-            if action == 'get_world':
-                world = json.dumps(myWorld.world())
-                ws.send(world)
-            elif action == 'update_entity':
-                entity = msg['entity']
-                data = msg['data']
-                myWorld.set(entity, data)
+            if 'action' in msg:
+                # I use an action format so that I can do different things with the same socket
+                # But freetests does not, we need to handle both
+                action = msg['action']
+                if action == 'get_world':
+                    world = json.dumps(myWorld.world())
+                    ws.send(world)
+                elif action == 'update_entity':
+                    entity = msg['entity']
+                    data = msg['data']
+                    myWorld.set(entity, data)
+            else:
+                for entity in msg:
+                    myWorld.set(entity, msg[entity])
 
     except Exception as e:
         print(e)
