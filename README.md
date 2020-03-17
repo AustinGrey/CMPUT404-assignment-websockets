@@ -20,6 +20,15 @@ pip install -r requirements.txt
 Contributors / Licensing
 ========================
 
+Because this is a fork, the original licensing is included below the next paragraph.
+
+However there are some minor changed that need to be addressed. It is worth noting that inspriation for the websockets portions of this assignment were based on the example websocket programs provided in the slides of the CMPUT 404 lectures by Abram Hindle. This assignment also borrows some code from my original submission to assignment 4, the ajax assignment.
+- WebSocket examples: https://github.com/uofa-cmput404/cmput404-slides/tree/master/examples/WebSocketsExamples
+- Previous Assignment: https://github.com/AustinGrey/CMPUT404-assignment-ajax
+
+
+**Original Contributors Section**
+
 Generally everything is LICENSE'D under the Apache 2 license by Abram Hindle.
 
 freetests.py is LICENSE'D under a BSD-like license:
